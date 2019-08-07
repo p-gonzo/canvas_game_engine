@@ -70,34 +70,29 @@ const moveAll = () => {
     const playerLeftSide = getTileFromPos({x: player.x - player.radius, y: player.y})
 
     // Only look for a player <> tile collision if the player is on the visible board
-    if (!(playerFeet.tileRow < 0 || playerFeet.tileRow > NUMBER_OF_ROWS - 1 || playerFeet.tileCol < 0 || playerFeet.tileCol > NUMBER_OF_COLUMNS - 1)) {
-        const playerFeetTile = tilesMatrix[playerFeet.tileRow][playerFeet.tileCol]
-        const playerRightSideTile = tilesMatrix[playerRightSide.tileRow][playerRightSide.tileCol]
-        const playerLeftSideTile = tilesMatrix[playerLeftSide.tileRow][playerLeftSide.tileCol]
-        
-        if (playerFeetTile === 1 && player.yDelta > 0 && player.y - player.radius < playerFeet.tileRow * TILE_HEIGHT) { // Player is falling and lands on tile
-            player.onGround = true;
-            player.yDelta = 0;
-        } else if (playerFeetTile === 0) {
-            player.onGround = false;
-        }
-        // If the payer is moving right, and they hit a block, stop them from moving right
-        if (player.keyHoldRight && playerRightSideTile) {
-            player.x -= 3;
-        }
-        // If the payer is moving left, and they hit a block, stop them from moving right
-        if (player.keyHoldLeft && playerLeftSideTile) {
-            player.x += 3;
-        }
+    const playerFeetTile = tilesMatrix[playerFeet.tileRow] === undefined ? 0 : tilesMatrix[playerFeet.tileRow][playerFeet.tileCol]
+    const playerRightSideTile = tilesMatrix[playerRightSide.tileRow] === undefined ? 0 : tilesMatrix[playerRightSide.tileRow][playerRightSide.tileCol]
+    const playerLeftSideTile = tilesMatrix[playerLeftSide.tileRow]=== undefined ? 0 : tilesMatrix[playerLeftSide.tileRow][playerLeftSide.tileCol]
+    
+    if (playerFeetTile === 1 && player.yDelta > 0 && player.y - player.radius < playerFeet.tileRow * TILE_HEIGHT) { // Player is falling and lands on tile
+        player.onGround = true;
+        player.yDelta = 0;
+    } else if (playerFeetTile === 0) {
+        player.onGround = false;
     }
-
+    // If the payer is moving right, and they hit a block, stop them from moving right
+    if (player.keyHoldRight && playerRightSideTile) {
+        player.x -= 3;
+    }
+    // If the payer is moving left, and they hit a block, stop them from moving right
+    if (player.keyHoldLeft && playerLeftSideTile) {
+        player.x += 3;
+    }
 
     // Reset player if they fall
-    if (player.y > CANVAS_HEIGHT + 100) {
-        player = {...player, x:100, y:100, yDelta: 0} 
+    if (player.y > CANVAS_HEIGHT + 100 || player.y < -200) {
+        player = {...player, x:100, y:100, yDelta: 0, onGround: false} 
     }
-
-    
 
     // To prevent a player from sinking into the ground
     if (player.onGround && player.y + player.radius > (playerFeet.tileRow * TILE_HEIGHT)) {
