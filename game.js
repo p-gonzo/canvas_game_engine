@@ -1,15 +1,18 @@
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 600;
-const NUMBER_OF_COLUMNS = 20;
-const NUMBER_OF_ROWS = 15;
+const NUMBER_OF_COLUMNS = 40;
+const NUMBER_OF_ROWS = 30;
 const TILE_WIDTH = CANVAS_WIDTH / NUMBER_OF_COLUMNS;
 const TILE_HEIGHT = CANVAS_HEIGHT / NUMBER_OF_ROWS;
 const FRAMES_PER_SECOND = 60;
 const GRAVITY = 0.6;
+const TILE_TYPES = ['Bricks', 'Coins']
+
 
 let tilesMatrix = [];
 let isDrawing = false;
 let justToggledTile = {tileCol: -1, tileRow: -1};
+let currentTileType = 1;
 
 player = {
     yDelta: 0,
@@ -35,7 +38,9 @@ window.onload = () => {
     const gameCanvas = setupAndCreateCanvas();
     setInterval(() => updateAll(gameCanvas), 1000/FRAMES_PER_SECOND);
     addCanvasClickListener(gameCanvas);
+    addTileToggleButtonClickListener();
     populateTilesMatrix();
+    addCoinToTilesMatrix();
 }
 
 const setupAndCreateCanvas = () => {
@@ -68,11 +73,26 @@ const moveAll = () => {
     const playerFeet = getTileFromPos({x: player.x, y: player.y + player.radius})
     const playerRightSide = getTileFromPos({x: player.x + player.radius, y: player.y})
     const playerLeftSide = getTileFromPos({x: player.x - player.radius, y: player.y})
+    const playerHead = getTileFromPos({x: player.x, y: player.y - player.radius})
 
     // Only look for a player <> tile collision if the player is on the visible board
     const playerFeetTile = tilesMatrix[playerFeet.tileRow] === undefined ? 0 : tilesMatrix[playerFeet.tileRow][playerFeet.tileCol]
     const playerRightSideTile = tilesMatrix[playerRightSide.tileRow] === undefined ? 0 : tilesMatrix[playerRightSide.tileRow][playerRightSide.tileCol]
-    const playerLeftSideTile = tilesMatrix[playerLeftSide.tileRow]=== undefined ? 0 : tilesMatrix[playerLeftSide.tileRow][playerLeftSide.tileCol]
+    const playerLeftSideTile = tilesMatrix[playerLeftSide.tileRow] === undefined ? 0 : tilesMatrix[playerLeftSide.tileRow][playerLeftSide.tileCol]
+    const playerHeadTile = tilesMatrix[playerHead.tileRow] === undefined ? 0 : tilesMatrix[playerHead.tileRow][playerHead.tileCol]
+
+    var tileValuesAroundPlayer = [playerFeetTile, playerRightSideTile, playerLeftSideTile, playerHeadTile];
+    var tilesAroundPlayer = [playerFeet, playerRightSide, playerLeftSide, playerHead];
+    var playerTouchingACoin = tileValuesAroundPlayer.indexOf(2)
+    
+    if (playerTouchingACoin !== -1) {
+        const targetTile = tilesAroundPlayer[playerTouchingACoin]
+        tilesMatrix[targetTile.tileRow][targetTile.tileCol] = 0;
+    }
+
+    // if (playerFeetTile === 2 || playerRightSideTile === 2 || playerLeftSideTile === 2 || playerHeadTile === 2) {
+    //     console.log('coin!')
+    // }
     
     if (playerFeetTile === 1 && player.yDelta > 0 && player.y - player.radius < playerFeet.tileRow * TILE_HEIGHT) { // Player is falling and lands on tile
         player.onGround = true;
@@ -122,6 +142,9 @@ const drawTiles = (canvas) => {
             var currentTileY = rowIdx * TILE_HEIGHT
             if (currentTile === 1) {
                 drawRect({canvas: gameCanvas, x:currentTileX, y:currentTileY, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: 'blue'})
+            }
+            if (currentTile === 2) {
+                drawRect({canvas: gameCanvas, x:currentTileX, y:currentTileY, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: 'gold'})
             }
         });
     });
@@ -174,6 +197,20 @@ const addCanvasClickListener = (gameCanvas) => {
 
 }
 
+const addTileToggleButtonClickListener = () => {
+    const toggleButton = document.getElementById('rotate-tile-types');
+    const toggleText = document.getElementById('current-tile-type');
+    toggleText.innerHTML = TILE_TYPES[currentTileType - 1];
+    toggleButton.addEventListener('click', () => {
+        if (currentTileType === TILE_TYPES.length) {
+            currentTileType = 1;
+        } else {
+            currentTileType ++;
+        }
+        toggleText.innerHTML = TILE_TYPES[currentTileType - 1];
+    });
+}
+
 const getTileFromPos = ({x, y}) => {
     const tileCol = Math.floor(x / TILE_WIDTH);
     const tileRow = Math.floor(y / TILE_HEIGHT);
@@ -182,7 +219,7 @@ const getTileFromPos = ({x, y}) => {
 
 const toggleBrick = ({tileCol, tileRow}) => {
     if (tileCol !== justToggledTile.tileCol || tileRow !== justToggledTile.tileRow)  {
-        tilesMatrix[tileRow][tileCol] = Number(!tilesMatrix[tileRow][tileCol])
+        tilesMatrix[tileRow][tileCol] === 0 ? tilesMatrix[tileRow][tileCol] = currentTileType : tilesMatrix[tileRow][tileCol] = 0;
         justToggledTile = {tileCol, tileRow}
     }
 }
@@ -191,9 +228,21 @@ const populateTilesMatrix = () => {
     for (let i = 0; i < NUMBER_OF_ROWS; i ++) {
         tilesMatrix.push([])
         for (let j = 0; j < NUMBER_OF_COLUMNS; j ++) {
-            tilesMatrix[i].push(0)
+            if (i === NUMBER_OF_ROWS - 1) {
+                tilesMatrix[i].push(1)
+            } else {
+                tilesMatrix[i].push(0)
+            }
         }
     }
+}
+
+const getRandomInt = (max) => {
+    return Math.floor(Math.random() * Math.floor(max));
+}
+
+const addCoinToTilesMatrix = () => {
+    tilesMatrix[getRandomInt(NUMBER_OF_ROWS - 1)][getRandomInt(NUMBER_OF_COLUMNS - 1)] = 2
 }
 
 const drawPlayer = ({canvas, x, y , radius, color}) => {
