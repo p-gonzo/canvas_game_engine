@@ -6,24 +6,45 @@ const TILE_WIDTH = CANVAS_WIDTH / NUMBER_OF_COLUMNS;
 const TILE_HEIGHT = CANVAS_HEIGHT / NUMBER_OF_ROWS;
 const FRAMES_PER_SECOND = 60;
 const GRAVITY = 0.6;
+
+const EMPTY = 0;
+const BRICK = 1;
+const COIN = 2;
+
+const PLAYER_SPEED = 3;
+const ENEMY_SPEED = 0.5;
+
 const TILE_TYPES = ['Bricks', 'Coins']
 
 
 let tilesMatrix = [];
 let isDrawing = false;
 let justToggledTile = {tileCol: -1, tileRow: -1};
-let currentTileType = 1;
+let currentTileType = BRICK;
 
 player = {
     yDelta: 0,
     x: 100,
     y: 100,
     radius: 15,
-    color: 'red',
+    color: 'white',
     onGround: false,
     keyHoldRight: false,
     keyHoldLeft: false
 }
+
+class Enemy {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.color = 'red';
+        this.radius = 15;
+    }
+}
+
+const enemies = [];
+
+enemies.push(new Enemy(300, 300));
 
 const getCanvas = () => {
     return document.getElementById("gameCanvas");
@@ -58,6 +79,7 @@ const drawAll = (gameCanvas) => {
     drawRect({canvas: gameCanvas, x:0, y:0, height: CANVAS_HEIGHT, width: CANVAS_WIDTH, color: 'black'});
     drawTiles(gameCanvas);
     drawPlayer({canvas:gameCanvas, ...player})
+    drawEnemies(gameCanvas)
 }
 
 const moveAll = () => {
@@ -83,21 +105,17 @@ const moveAll = () => {
 
     var tileValuesAroundPlayer = [playerFeetTile, playerRightSideTile, playerLeftSideTile, playerHeadTile];
     var tilesAroundPlayer = [playerFeet, playerRightSide, playerLeftSide, playerHead];
-    var playerTouchingACoin = tileValuesAroundPlayer.indexOf(2)
+    var playerTouchingACoin = tileValuesAroundPlayer.indexOf(COIN)
     
     if (playerTouchingACoin !== -1) {
         const targetTile = tilesAroundPlayer[playerTouchingACoin]
-        tilesMatrix[targetTile.tileRow][targetTile.tileCol] = 0;
+        tilesMatrix[targetTile.tileRow][targetTile.tileCol] = EMPTY;
     }
-
-    // if (playerFeetTile === 2 || playerRightSideTile === 2 || playerLeftSideTile === 2 || playerHeadTile === 2) {
-    //     console.log('coin!')
-    // }
     
-    if (playerFeetTile === 1 && player.yDelta > 0 && player.y - player.radius < playerFeet.tileRow * TILE_HEIGHT) { // Player is falling and lands on tile
+    if (playerFeetTile === BRICK && player.yDelta > 0 && player.y - player.radius < playerFeet.tileRow * TILE_HEIGHT) { // Player is falling and lands on tile
         player.onGround = true;
         player.yDelta = 0;
-    } else if (playerFeetTile === 0) {
+    } else if (playerFeetTile === EMPTY) {
         player.onGround = false;
     }
     // If the payer is moving right, and they hit a block, stop them from moving right
@@ -121,11 +139,26 @@ const moveAll = () => {
 
     // Move player left or right
     if (player.keyHoldLeft) {
-        player.x -= 3
+        player.x -= PLAYER_SPEED
     }
     if (player.keyHoldRight) {
-        player.x += 3
+        player.x += PLAYER_SPEED
     }
+
+    // Move enemies
+    enemies.forEach(enemy => {
+        var enemyPlayerXDelta = player.x - enemy.x;
+        var enemyPlayerYDelta = player.y - enemy.y;
+        var enemyXDelta = enemyPlayerXDelta == 0 ? 0 : enemyPlayerXDelta > 0 ? ENEMY_SPEED : ENEMY_SPEED * -1;
+        var enemyYDelta = enemyPlayerYDelta == 0 ? 0 : enemyPlayerYDelta > 0 ? ENEMY_SPEED : ENEMY_SPEED * -1;
+        enemy.x += enemyXDelta;
+        enemy.y += enemyYDelta;
+
+        if (Math.abs(enemyPlayerXDelta) < player.radius + enemy.radius && Math.abs(enemyPlayerYDelta) < player.radius + enemy.radius) {
+            player = {...player, x:100, y:100, yDelta: 0, onGround: false} 
+        }
+    })
+
 }
 
 const drawRect = ({canvas, x, y , width, height, color}) => {
@@ -140,10 +173,10 @@ const drawTiles = (canvas) => {
             var currentTile = tilesMatrix[rowIdx][columnIdx]
             var currentTileX = columnIdx * TILE_WIDTH;
             var currentTileY = rowIdx * TILE_HEIGHT
-            if (currentTile === 1) {
+            if (currentTile === BRICK) {
                 drawRect({canvas: gameCanvas, x:currentTileX, y:currentTileY, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: 'blue'})
             }
-            if (currentTile === 2) {
+            if (currentTile === COIN) {
                 drawRect({canvas: gameCanvas, x:currentTileX, y:currentTileY, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: 'gold'})
             }
         });
@@ -203,7 +236,7 @@ const addTileToggleButtonClickListener = () => {
     toggleText.innerHTML = TILE_TYPES[currentTileType - 1];
     toggleButton.addEventListener('click', () => {
         if (currentTileType === TILE_TYPES.length) {
-            currentTileType = 1;
+            currentTileType = BRICK;
         } else {
             currentTileType ++;
         }
@@ -219,7 +252,7 @@ const getTileFromPos = ({x, y}) => {
 
 const toggleBrick = ({tileCol, tileRow}) => {
     if (tileCol !== justToggledTile.tileCol || tileRow !== justToggledTile.tileRow)  {
-        tilesMatrix[tileRow][tileCol] === 0 ? tilesMatrix[tileRow][tileCol] = currentTileType : tilesMatrix[tileRow][tileCol] = 0;
+        tilesMatrix[tileRow][tileCol] === EMPTY ? tilesMatrix[tileRow][tileCol] = currentTileType : tilesMatrix[tileRow][tileCol] = 0;
         justToggledTile = {tileCol, tileRow}
     }
 }
@@ -229,9 +262,9 @@ const populateTilesMatrix = () => {
         tilesMatrix.push([])
         for (let j = 0; j < NUMBER_OF_COLUMNS; j ++) {
             if (i === NUMBER_OF_ROWS - 1) {
-                tilesMatrix[i].push(1)
+                tilesMatrix[i].push(BRICK)
             } else {
-                tilesMatrix[i].push(0)
+                tilesMatrix[i].push(EMPTY)
             }
         }
     }
@@ -242,7 +275,7 @@ const getRandomInt = (max) => {
 }
 
 const addCoinToTilesMatrix = () => {
-    tilesMatrix[getRandomInt(NUMBER_OF_ROWS - 1)][getRandomInt(NUMBER_OF_COLUMNS - 1)] = 2
+    tilesMatrix[getRandomInt(NUMBER_OF_ROWS - 1)][getRandomInt(NUMBER_OF_COLUMNS - 1)] = COIN
 }
 
 const drawPlayer = ({canvas, x, y , radius, color}) => {
@@ -252,4 +285,10 @@ const drawPlayer = ({canvas, x, y , radius, color}) => {
     ctx.arc(x, y , radius, 0, 2 * Math.PI);
     ctx.closePath();
     ctx.fill();
+}
+
+const drawEnemies = (gameCanvas) => {
+    enemies.forEach(enemy => {
+        drawPlayer({canvas: gameCanvas, ...enemy})
+    })
 }
