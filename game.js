@@ -10,7 +10,8 @@ const GRAVITY = 0.6;
 const LEFT = 65;
 const RIGHT = 68;
 const UP = 87;
-const FIRE = 32;
+const JUMP = 16;
+const FIRE = 191;
 
 const EMPTY = 0;
 const BRICK = 1;
@@ -32,9 +33,9 @@ const bullets = [];
 
 class Player{
   constructor(xPos, yPos) {
-    this.x = 100;
-    this.y = 100;
-    this.yDelta =0 ;
+    this.x = xPos;
+    this.y = yPos;
+    this.yDelta = 0;
     this.xDelta = 0;
     this.radius = 15;
     this.color = 'white';
@@ -49,6 +50,8 @@ class Player{
     bullets.push(new Bullet(this.x, this.y, xDirection, this.yDirection))
   }
   die() {
+    this.yDelta = 0;
+    this.xDelta = 0;
     this.x = 100;
     this.y = 100;
     this.onGround = false;
@@ -106,10 +109,21 @@ class Player{
       this.y = this.playerFeet.tileRow * TILE_HEIGHT - this.radius;
     }
   }
+
+  _movePlayerLeftRight() {
+    if (this.keyHoldLeft) {
+      this.x -= PLAYER_SPEED
+    }
+    if (this.keyHoldRight) {
+      this.x += PLAYER_SPEED
+    }
+  }
+
   updatePosition() {
     this._applyGravity();
     this._detectSurroundings();
     this._detectCollisions();
+    this._movePlayerLeftRight();
   }
 }
 
@@ -119,6 +133,21 @@ class Enemy {
     this.y = y;
     this.color = 'red';
     this.radius = 15;
+  }
+
+  updatePosition(player) {
+    this.enemyPlayerXDelta = player.x - this.x;
+    this.enemyPlayerYDelta = player.y - this.y;
+    let enemyXDelta = this.enemyPlayerXDelta == 0 ? 0 : this.enemyPlayerXDelta > 0 ? ENEMY_SPEED : ENEMY_SPEED * -1;
+    let enemyYDelta = this.enemyPlayerYDelta == 0 ? 0 : this.enemyPlayerYDelta > 0 ? ENEMY_SPEED : ENEMY_SPEED * -1;
+    this.x += enemyXDelta;
+    this.y += enemyYDelta;
+  }
+
+  tryToKillPlayer(player) {
+    if (Math.abs(this.enemyPlayerXDelta) < player.radius + this.radius && Math.abs(this.enemyPlayerYDelta) < player.radius + this.radius) {
+      player.die();
+    }
   }
 }
 
@@ -130,6 +159,20 @@ class Bullet {
     this.dy = dy;
     this.color = 'white';
     this.radius = 5;
+    this.speed = 10;
+  }
+
+  updatePosition() {
+    this.x += this.dx * this.speed;
+    this.y += this.dy * this.speed;
+  }
+
+  isOutOfBounds() {
+    return this.x > CANVAS_WIDTH || this.x < 0 || this.y > CANVAS_HEIGHT || this.y < 0;
+  }
+
+  collidedWithEnemy(enemy) {
+    return this.x > enemy.x - enemy.radius && this.x < enemy.x + enemy.radius && this.y > enemy.y - enemy.radius && this.y < enemy.y + enemy.radius;
   }
 }
 
@@ -187,71 +230,23 @@ const drawAll = (gameCanvas) => {
 const moveAll = () => {
   player.updatePosition();
 
-  // Detect player / tile collision
-
-  // Get the tile that is beneath the player's feet
-  const playerFeet = getTileFromPos({x: player.x, y: player.y + player.radius})
-  const playerRightSide = getTileFromPos({x: player.x + player.radius, y: player.y})
-  const playerLeftSide = getTileFromPos({x: player.x - player.radius, y: player.y})
-  const playerHead = getTileFromPos({x: player.x, y: player.y - player.radius})
-
-  const playerFeetTile = tilesMatrix[playerFeet.tileRow] === undefined ? 0 : tilesMatrix[playerFeet.tileRow][playerFeet.tileCol]
-  const playerRightSideTile = tilesMatrix[playerRightSide.tileRow] === undefined ? 0 : tilesMatrix[playerRightSide.tileRow][playerRightSide.tileCol]
-  const playerLeftSideTile = tilesMatrix[playerLeftSide.tileRow] === undefined ? 0 : tilesMatrix[playerLeftSide.tileRow][playerLeftSide.tileCol]
-  const playerHeadTile = tilesMatrix[playerHead.tileRow] === undefined ? 0 : tilesMatrix[playerHead.tileRow][playerHead.tileCol]
-
-  let tileValuesAroundPlayer = [playerFeetTile, playerRightSideTile, playerLeftSideTile, playerHeadTile];
-  let tilesAroundPlayer = [playerFeet, playerRightSide, playerLeftSide, playerHead];
-  let playerTouchingACoin = tileValuesAroundPlayer.indexOf(COIN)
-  
-
-  // Move player left or right
-  if (player.keyHoldLeft) {
-    player.x -= PLAYER_SPEED
-  }
-  if (player.keyHoldRight) {
-    player.x += PLAYER_SPEED
-  }
-
-  // Move enemies
   enemies.forEach(enemy => {
-    let enemyPlayerXDelta = player.x - enemy.x;
-    let enemyPlayerYDelta = player.y - enemy.y;
-    let enemyXDelta = enemyPlayerXDelta == 0 ? 0 : enemyPlayerXDelta > 0 ? ENEMY_SPEED : ENEMY_SPEED * -1;
-    let enemyYDelta = enemyPlayerYDelta == 0 ? 0 : enemyPlayerYDelta > 0 ? ENEMY_SPEED : ENEMY_SPEED * -1;
-    enemy.x += enemyXDelta;
-    enemy.y += enemyYDelta;
-
-    // player enemy collision
-    if (Math.abs(enemyPlayerXDelta) < player.radius + enemy.radius && Math.abs(enemyPlayerYDelta) < player.radius + enemy.radius) {
-      player.die();
-    }
+    enemy.updatePosition(player);
+    enemy.tryToKillPlayer(player);
   });
 
-  // Move bullets
   currentBulletIndex = bullets.length - 1;
   while (currentBulletIndex >= 0) {
     let bullet = bullets[currentBulletIndex];
-    bullet.x += bullet.dx * 10;
-    bullet.y += bullet.dy * 10;
-    if(
-      bullet.x > CANVAS_WIDTH
-      || bullet.x < 0
-      || bullet.y > CANVAS_HEIGHT
-      || bullet.y < 0
-    ) {
+    bullet.updatePosition();
+    if(bullet.isOutOfBounds()) {
       bullets.splice(currentBulletIndex, 1);
     }
   
     currentEnemyIndex = enemies.length - 1;
     while (currentEnemyIndex >= 0) {
       let enemy = enemies[currentEnemyIndex];
-      if (
-        bullet.x > enemy.x - enemy.radius
-        && bullet.x < enemy.x + enemy.radius
-        && bullet.y > enemy.y - enemy.radius
-        && bullet.y < enemy.y + enemy.radius
-      ) {
+      if (bullet.collidedWithEnemy(enemy)) {
         enemies.splice(currentEnemyIndex, 1);
         bullets.splice(currentBulletIndex, 1);
       }
@@ -310,11 +305,11 @@ const addCanvasClickListener = (gameCanvas) => {
   });
 
   document.body.onkeydown = (evt) =>{
-    if(evt.keyCode == UP){
-      if (player.onGround) {
-        player.yDelta = -10;
-        player.yDirection = -1;
-      }
+    console.log(evt.keyCode);
+    if (evt.keyCode == JUMP && player.onGround) {
+      player.yDelta = -10;
+    } else if (evt.keyCode == UP) {
+      player.yDirection = -1;
     } else if (evt.keyCode == LEFT) {
       player.keyHoldLeft = true;
       player.xDirection = -1;
