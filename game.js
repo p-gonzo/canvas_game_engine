@@ -27,21 +27,90 @@ let isDrawing = false;
 let justToggledTile = {tileCol: -1, tileRow: -1};
 let currentTileType = BRICK;
 
-player = {
-  yDelta: 0,
-  x: 100,
-  y: 100,
-  radius: 15,
-  color: 'white',
-  onGround: false,
-  keyHoldRight: false,
-  keyHoldLeft: false,
-  xDirection: 1,
-  yDirection: 0,
-  fire: function() {
+const enemies = [];
+const bullets = [];
+
+class Player{
+  constructor(xPos, yPos) {
+    this.x = 100;
+    this.y = 100;
+    this.yDelta =0 ;
+    this.xDelta = 0;
+    this.radius = 15;
+    this.color = 'white';
+    this.onGround = false;
+    this.keyHoldRight = false;
+    this.keyHoldLeft = false;
+    this.xDirection = 1;
+    this.yDirection = 0;
+  }
+  fire() {
     let xDirection = this.yDirection === 0 ? this.xDirection : 0;
     bullets.push(new Bullet(this.x, this.y, xDirection, this.yDirection))
-  },
+  }
+  die() {
+    this.x = 100;
+    this.y = 100;
+    this.onGround = false;
+  }
+  _applyGravity() {
+    if (!this.onGround) {
+      this.yDelta += GRAVITY;
+    }
+    this.y += this.yDelta;
+  }
+  _detectSurroundings() {
+    this.playerFeet = getTileFromPos({x: this.x, y: this.y + this.radius});
+    this.playerRightSide = getTileFromPos({x: this.x + this.radius, y: this.y});
+    this.playerLeftSide = getTileFromPos({x: this.x - this.radius, y: this.y});
+    this.playerHead = getTileFromPos({x: this.x, y: this.y - this.radius});
+
+    this.playerFeetTile = tilesMatrix[this.playerFeet.tileRow] === undefined ? 0 : tilesMatrix[this.playerFeet.tileRow][this.playerFeet.tileCol];
+    this.playerRightSideTile = tilesMatrix[this.playerRightSide.tileRow] === undefined ? 0 : tilesMatrix[this.playerRightSide.tileRow][this.playerRightSide.tileCol];
+    this.playerLeftSideTile = tilesMatrix[this.playerLeftSide.tileRow] === undefined ? 0 : tilesMatrix[this.playerLeftSide.tileRow][this.playerLeftSide.tileCol];
+    this.playerHeadTile = tilesMatrix[this.playerHead.tileRow] === undefined ? 0 : tilesMatrix[this.playerHead.tileRow][this.playerHead.tileCol];
+
+    this.tileValuesAroundPlayer = [this.playerFeetTile, this.playerRightSideTile, this.playerLeftSideTile, this.playerHeadTile];
+    this.tilesAroundPlayer = [this.playerFeet, this.playerRightSide, this.playerLeftSide, this.playerHead];
+    this.playerTouchingACoin = this.tileValuesAroundPlayer.indexOf(COIN);
+  }
+
+  _detectCollisions() {
+    if (this.playerTouchingACoin !== -1) {
+      const targetTile = this.tilesAroundPlayer[this.playerTouchingACoin]
+      tilesMatrix[targetTile.tileRow][targetTile.tileCol] = EMPTY;
+    }
+    
+    if (this.playerFeetTile === BRICK && this.yDelta > 0 && this.y - this.radius < this.playerFeet.tileRow * TILE_HEIGHT) { // Player is falling and lands on tile
+      this.onGround = true;
+      this.yDelta = 0;
+    } else if (this.playerFeetTile === EMPTY) {
+      this.onGround = false;
+    }
+    // If the payer is moving right, and they hit a block, stop them from moving right
+    if (this.keyHoldRight && this.playerRightSideTile) {
+      this.x -= 3;
+    }
+    // If the payer is moving left, and they hit a block, stop them from moving right
+    if (this.keyHoldLeft && this.playerLeftSideTile) {
+      this.x += 3;
+    }
+  
+    // Reset player if they fall
+    if (this.y > CANVAS_HEIGHT + 100 || this.y < -200) {
+      this.die() 
+    }
+  
+    // To prevent a player from sinking into the ground
+    if (this.onGround && this.y + this.radius > (this.playerFeet.tileRow * TILE_HEIGHT)) {
+      this.y = this.playerFeet.tileRow * TILE_HEIGHT - this.radius;
+    }
+  }
+  updatePosition() {
+    this._applyGravity();
+    this._detectSurroundings();
+    this._detectCollisions();
+  }
 }
 
 class Enemy {
@@ -64,9 +133,8 @@ class Bullet {
   }
 }
 
-const enemies = [];
+player = new Player(100, 100);
 
-const bullets = [];
 
 const getRandomInt = max => {
   return Math.floor(Math.random() * Math.floor(max));
@@ -117,11 +185,7 @@ const drawAll = (gameCanvas) => {
 }
 
 const moveAll = () => {
-  // Apply player gravity
-  if (!player.onGround) {
-    player.yDelta += GRAVITY;
-  }
-  player.y += player.yDelta;
+  player.updatePosition();
 
   // Detect player / tile collision
 
@@ -131,7 +195,6 @@ const moveAll = () => {
   const playerLeftSide = getTileFromPos({x: player.x - player.radius, y: player.y})
   const playerHead = getTileFromPos({x: player.x, y: player.y - player.radius})
 
-  // Only look for a player <> tile collision if the player is on the visible board
   const playerFeetTile = tilesMatrix[playerFeet.tileRow] === undefined ? 0 : tilesMatrix[playerFeet.tileRow][playerFeet.tileCol]
   const playerRightSideTile = tilesMatrix[playerRightSide.tileRow] === undefined ? 0 : tilesMatrix[playerRightSide.tileRow][playerRightSide.tileCol]
   const playerLeftSideTile = tilesMatrix[playerLeftSide.tileRow] === undefined ? 0 : tilesMatrix[playerLeftSide.tileRow][playerLeftSide.tileCol]
@@ -141,35 +204,6 @@ const moveAll = () => {
   let tilesAroundPlayer = [playerFeet, playerRightSide, playerLeftSide, playerHead];
   let playerTouchingACoin = tileValuesAroundPlayer.indexOf(COIN)
   
-  if (playerTouchingACoin !== -1) {
-    const targetTile = tilesAroundPlayer[playerTouchingACoin]
-    tilesMatrix[targetTile.tileRow][targetTile.tileCol] = EMPTY;
-  }
-  
-  if (playerFeetTile === BRICK && player.yDelta > 0 && player.y - player.radius < playerFeet.tileRow * TILE_HEIGHT) { // Player is falling and lands on tile
-    player.onGround = true;
-    player.yDelta = 0;
-  } else if (playerFeetTile === EMPTY) {
-    player.onGround = false;
-  }
-  // If the payer is moving right, and they hit a block, stop them from moving right
-  if (player.keyHoldRight && playerRightSideTile) {
-    player.x -= 3;
-  }
-  // If the payer is moving left, and they hit a block, stop them from moving right
-  if (player.keyHoldLeft && playerLeftSideTile) {
-    player.x += 3;
-  }
-
-  // Reset player if they fall
-  if (player.y > CANVAS_HEIGHT + 100 || player.y < -200) {
-    player = {...player, x:100, y:100, yDelta: 0, onGround: false} 
-  }
-
-  // To prevent a player from sinking into the ground
-  if (player.onGround && player.y + player.radius > (playerFeet.tileRow * TILE_HEIGHT)) {
-    player.y = playerFeet.tileRow * TILE_HEIGHT - player.radius;
-  }
 
   // Move player left or right
   if (player.keyHoldLeft) {
@@ -190,7 +224,7 @@ const moveAll = () => {
 
     // player enemy collision
     if (Math.abs(enemyPlayerXDelta) < player.radius + enemy.radius && Math.abs(enemyPlayerYDelta) < player.radius + enemy.radius) {
-      player = {...player, x:100, y:100, yDelta: 0, onGround: false} 
+      player.die();
     }
   });
 
@@ -225,8 +259,6 @@ const moveAll = () => {
     }
     currentBulletIndex--;
   }
-
-  // Detect bullet enemy collision
 
 }
 
