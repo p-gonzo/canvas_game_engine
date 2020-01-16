@@ -20,16 +20,6 @@ const COIN = 2;
 const PLAYER_SPEED = 3;
 const ENEMY_SPEED = 0.5;
 
-const TILE_TYPES = ['Bricks', 'Coins']
-
-
-let tilesMatrix = [];
-let isDrawing = false;
-let justToggledTile = {tileCol: -1, tileRow: -1};
-let currentTileType = BRICK;
-
-const enemies = [];
-const bullets = [];
 
 class Player{
   constructor(xPos, yPos) {
@@ -44,10 +34,13 @@ class Player{
     this.keyHoldLeft = false;
     this.xDirection = 1;
     this.yDirection = 0;
+    this.isDrawing = false;
+    this.currentTileType = BRICK;
+    this.justToggledTile = { tileCol: -1, tileRow: -1 };
   }
-  fire() {
+  fire(bullets) {
     let xDirection = this.yDirection === 0 ? this.xDirection : 0;
-    bullets.push(new Bullet(this.x, this.y, xDirection, this.yDirection))
+    bullets.push(new Bullet(this.x, this.y, xDirection, this.yDirection));
   }
   die() {
     this.yDelta = 0;
@@ -56,13 +49,19 @@ class Player{
     this.y = 100;
     this.onGround = false;
   }
+  toggleBrick( tilesMatrix, { tileCol, tileRow } ){
+    if (tileCol !== this.justToggledTile.tileCol || tileRow !== this.justToggledTile.tileRow)  {
+      tilesMatrix[tileRow][tileCol] === EMPTY ? tilesMatrix[tileRow][tileCol] = this.currentTileType : tilesMatrix[tileRow][tileCol] = 0;
+      this.justToggledTile = { tileCol, tileRow };
+    }
+  }
   _applyGravity() {
     if (!this.onGround) {
       this.yDelta += GRAVITY;
     }
     this.y += this.yDelta;
   }
-  _detectSurroundings() {
+  _detectSurroundings(tilesMatrix) {
     this.playerFeet = getTileFromPos({x: this.x, y: this.y + this.radius});
     this.playerRightSide = getTileFromPos({x: this.x + this.radius, y: this.y});
     this.playerLeftSide = getTileFromPos({x: this.x - this.radius, y: this.y});
@@ -75,12 +74,12 @@ class Player{
 
     this.tileValuesAroundPlayer = [this.playerFeetTile, this.playerRightSideTile, this.playerLeftSideTile, this.playerHeadTile];
     this.tilesAroundPlayer = [this.playerFeet, this.playerRightSide, this.playerLeftSide, this.playerHead];
-    this.playerTouchingACoin = this.tileValuesAroundPlayer.indexOf(COIN);
+    this.touchingACoin = this.tileValuesAroundPlayer.indexOf(COIN);
   }
 
-  _detectCollisions() {
-    if (this.playerTouchingACoin !== -1) {
-      const targetTile = this.tilesAroundPlayer[this.playerTouchingACoin]
+  _detectCollisions(tilesMatrix) {
+    if (this.touchingACoin !== -1) {
+      const targetTile = this.tilesAroundPlayer[this.touchingACoin]
       tilesMatrix[targetTile.tileRow][targetTile.tileCol] = EMPTY;
     }
     
@@ -119,10 +118,10 @@ class Player{
     }
   }
 
-  updatePosition() {
+  updatePosition(tilesMatrix) {
     this._applyGravity();
-    this._detectSurroundings();
-    this._detectCollisions();
+    this._detectSurroundings(tilesMatrix);
+    this._detectCollisions(tilesMatrix);
     this._movePlayerLeftRight();
   }
 }
@@ -133,6 +132,7 @@ class Enemy {
     this.y = y;
     this.color = 'red';
     this.radius = 15;
+    this.deleteFlag = false;
   }
 
   updatePosition(player) {
@@ -160,6 +160,7 @@ class Bullet {
     this.color = 'white';
     this.radius = 5;
     this.speed = 10;
+    this.deleteFlag = false;
   }
 
   updatePosition() {
@@ -176,85 +177,126 @@ class Bullet {
   }
 }
 
-player = new Player(100, 100);
+class Game {
+  constructor(canvasId, canvasWidth, canvasHeight) {
+    this.enemies = [];
+    this.bullets = [];
+    this.player = new Player(100, 100, this.bullets);
+    this.tilesMatrix = generateTilesMatrix();
+    this.gameCanvas = document.getElementById(canvasId);
+    this.gameCanvas.width = canvasWidth;
+    this.gameCanvas.height = canvasHeight;
+  }
+
+  play() {
+    this._init();
+    setInterval(() => this._mainLoop(), 1000/FRAMES_PER_SECOND);
+    setInterval(() => this.enemies.push(new Enemy(getRandomInt(this.gameCanvas.width), getRandomInt(this.gameCanvas.height))), 3000);
+  }
+
+  _init() {
+    this._addGameEventListeners(this.gameCanvas, this.player);
+    this._addCoinToTilesMatrix(this.tilesMatrix);
+  }
+
+  _mainLoop() {
+    this._moveAll();
+    this._drawAll(this.gameCanvas, this.tilesMatrix);
+  }
+
+  _moveAll() {
+    this.enemies = this.enemies.filter(enemy => !enemy.deleteFlag);
+    this.bullets = this.bullets.filter(bullet => !bullet.deleteFlag);
+  
+    this.player.updatePosition(this.tilesMatrix);
+    if(this.player.touchingACoin !== -1) {
+      this._addCoinToTilesMatrix(this.tilesMatrix);
+    }
+  
+    this.enemies.forEach(enemy => {
+      enemy.updatePosition(this.player);
+      enemy.tryToKillPlayer(this.player);
+    });
+  
+    this.bullets.forEach(bullet => {
+      bullet.updatePosition();
+      if(bullet.isOutOfBounds()) {
+        bullet.deleteFlag = true;
+      }
+      this.enemies.forEach(enemy => {
+        if (bullet.collidedWithEnemy(enemy)) {
+          bullet.deleteFlag = true;
+          enemy.deleteFlag = true;
+        }
+      })
+    });
+  }
+
+  _drawAll() {
+    drawRect({ canvas: this.gameCanvas, x: 0, y: 0, height: CANVAS_HEIGHT, width: CANVAS_WIDTH, color: 'black' });
+    drawTiles(this.gameCanvas, this.tilesMatrix);
+    drawPlayer({canvas: this.gameCanvas, ...this.player});
+    drawEnemies(this.gameCanvas, this.enemies);
+    drawBullets(this.gameCanvas, this.bullets);
+  }
+
+  _addCoinToTilesMatrix(tilesMatrix) {
+    tilesMatrix[getRandomInt(NUMBER_OF_ROWS - 1)][getRandomInt(NUMBER_OF_COLUMNS - 1)] = COIN
+  }
+
+  _addGameEventListeners(gameCanvas, player) {
+    gameCanvas.addEventListener('mousedown', _ => {
+      this.player.isDrawing = true;
+    })
+    gameCanvas.addEventListener('mouseup', evt => {
+      this.player.isDrawing = false;
+      const mousePos = getMousePos(gameCanvas, evt);
+      this.player.toggleBrick(this.tilesMatrix, getTileFromPos(mousePos))
+      this.justToggledTile = { tileCol: -1, tileRow: -1 };
+    })
+    gameCanvas.addEventListener('mousemove', evt => {
+      if (this.player.isDrawing) {
+        const mousePos = getMousePos(gameCanvas, evt);
+        this.player.toggleBrick(this.tilesMatrix, getTileFromPos(mousePos))
+      } 
+    });
+  
+    document.body.onkeydown = evt =>{
+      if (evt.keyCode == JUMP && player.onGround) {
+        player.yDelta = -10;
+      } else if (evt.keyCode == UP) {
+        player.yDirection = -1;
+      } else if (evt.keyCode == LEFT) {
+        player.keyHoldLeft = true;
+        player.xDirection = -1;
+      } else if (evt.keyCode == RIGHT) {
+        player.keyHoldRight = true;
+        player.xDirection = 1;
+      }
+    }
+  
+    document.body.onkeyup = (evt) =>{
+      if (evt.keyCode == LEFT) {
+        player.keyHoldLeft = false;
+      } else if (evt.keyCode == RIGHT) {
+        player.keyHoldRight = false;
+      } else if (evt.keyCode == UP) {
+        player.yDirection = 0;
+      } else if (evt.keyCode == FIRE) {
+        player.fire(this.bullets);
+      }
+    }
+  }
+}
 
 
 const getRandomInt = max => {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-setInterval(() => {
-  enemies.push(new Enemy(
-    getRandomInt(CANVAS_WIDTH), 
-    getRandomInt(CANVAS_HEIGHT)))
-  }, 3000);
-
-
-const getCanvas = () => {
-  return document.getElementById("gameCanvas");
-}
-
-const setCanvasSize = (gameCanvas) => {
-  gameCanvas.height = CANVAS_HEIGHT;
-  gameCanvas.width = CANVAS_WIDTH;
-}
-
 window.onload = () => {
-  const gameCanvas = setupAndCreateCanvas();
-  setInterval(() => updateAll(gameCanvas), 1000/FRAMES_PER_SECOND);
-  addCanvasClickListener(gameCanvas);
-  addTileToggleButtonClickListener();
-  populateTilesMatrix();
-  addCoinToTilesMatrix();
-}
-
-const setupAndCreateCanvas = () => {
-  const gameCanvas = getCanvas();
-  setCanvasSize(gameCanvas);
-  return gameCanvas
-}
-
-const updateAll = (gameCanvas) => {
-  moveAll();
-  drawAll(gameCanvas);
-}
-
-const drawAll = (gameCanvas) => {
-  drawRect({canvas: gameCanvas, x:0, y:0, height: CANVAS_HEIGHT, width: CANVAS_WIDTH, color: 'black'});
-  drawTiles(gameCanvas);
-  drawPlayer({canvas:gameCanvas, ...player});
-  drawEnemies(gameCanvas);
-  drawBullets(gameCanvas);
-}
-
-const moveAll = () => {
-  player.updatePosition();
-
-  enemies.forEach(enemy => {
-    enemy.updatePosition(player);
-    enemy.tryToKillPlayer(player);
-  });
-
-  currentBulletIndex = bullets.length - 1;
-  while (currentBulletIndex >= 0) {
-    let bullet = bullets[currentBulletIndex];
-    bullet.updatePosition();
-    if(bullet.isOutOfBounds()) {
-      bullets.splice(currentBulletIndex, 1);
-    }
-  
-    currentEnemyIndex = enemies.length - 1;
-    while (currentEnemyIndex >= 0) {
-      let enemy = enemies[currentEnemyIndex];
-      if (bullet.collidedWithEnemy(enemy)) {
-        enemies.splice(currentEnemyIndex, 1);
-        bullets.splice(currentBulletIndex, 1);
-      }
-      currentEnemyIndex--;
-    }
-    currentBulletIndex--;
-  }
-
+  const game = new Game('gameCanvas', CANVAS_WIDTH, CANVAS_HEIGHT);
+  game.play();
 }
 
 const drawRect = ({canvas, x, y , width, height, color}) => {
@@ -263,7 +305,7 @@ const drawRect = ({canvas, x, y , width, height, color}) => {
   ctx.fillRect(x, y, width, height);
 }
 
-const drawTiles = (canvas) => {
+const drawTiles = (gameCanvas, tilesMatrix) => {
   tilesMatrix.forEach((row, rowIdx) => {
     row.forEach((_, columnIdx) => {
       let currentTile = tilesMatrix[rowIdx][columnIdx]
@@ -287,80 +329,14 @@ const getMousePos = (canvas, evt) => {
   };
 }
 
-const addCanvasClickListener = (gameCanvas) => {
-  gameCanvas.addEventListener('mousedown', _ => {
-    isDrawing = true;
-  })
-  gameCanvas.addEventListener('mouseup', evt => {
-    isDrawing = false;
-    const mousePos = getMousePos(gameCanvas, evt);
-    toggleBrick(getTileFromPos(mousePos))
-    justToggledTile = {tileCol: -1, tileRow: -1};
-})
-  gameCanvas.addEventListener('mousemove', evt => {
-    if (isDrawing) {
-      const mousePos = getMousePos(gameCanvas, evt);
-      toggleBrick(getTileFromPos(mousePos))
-  }
-  });
-
-  document.body.onkeydown = (evt) =>{
-    console.log(evt.keyCode);
-    if (evt.keyCode == JUMP && player.onGround) {
-      player.yDelta = -10;
-    } else if (evt.keyCode == UP) {
-      player.yDirection = -1;
-    } else if (evt.keyCode == LEFT) {
-      player.keyHoldLeft = true;
-      player.xDirection = -1;
-    } else if (evt.keyCode == RIGHT) {
-      player.keyHoldRight = true;
-      player.xDirection = 1;
-    }
-  }
-
-  document.body.onkeyup = (evt) =>{
-    if (evt.keyCode == LEFT) {
-      player.keyHoldLeft = false;
-    } else if (evt.keyCode == RIGHT) {
-      player.keyHoldRight = false;
-    } else if (evt.keyCode == UP) {
-      player.yDirection = 0;
-    } else if (evt.keyCode == FIRE) {
-      player.fire();
-    }
-  }
-
-}
-
-const addTileToggleButtonClickListener = () => {
-  const toggleButton = document.getElementById('rotate-tile-types');
-  const toggleText = document.getElementById('current-tile-type');
-  toggleText.innerHTML = TILE_TYPES[currentTileType - 1];
-  toggleButton.addEventListener('click', () => {
-    if (currentTileType === TILE_TYPES.length) {
-      currentTileType = BRICK;
-    } else {
-      currentTileType ++;
-    }
-    toggleText.innerHTML = TILE_TYPES[currentTileType - 1];
-  });
-}
-
-const getTileFromPos = ({x, y}) => {
+const getTileFromPos = ({ x, y }) => {
   const tileCol = Math.floor(x / TILE_WIDTH);
   const tileRow = Math.floor(y / TILE_HEIGHT);
-  return {tileCol, tileRow}
+  return { tileCol, tileRow }
 }
 
-const toggleBrick = ({tileCol, tileRow}) => {
-  if (tileCol !== justToggledTile.tileCol || tileRow !== justToggledTile.tileRow)  {
-    tilesMatrix[tileRow][tileCol] === EMPTY ? tilesMatrix[tileRow][tileCol] = currentTileType : tilesMatrix[tileRow][tileCol] = 0;
-    justToggledTile = {tileCol, tileRow}
-  }
-}
-
-const populateTilesMatrix = () => {
+const generateTilesMatrix = () => {
+  const tilesMatrix = [];
   for (let i = 0; i < NUMBER_OF_ROWS; i ++) {
     tilesMatrix.push([])
     for (let j = 0; j < NUMBER_OF_COLUMNS; j ++) {
@@ -371,6 +347,7 @@ const populateTilesMatrix = () => {
       }
     }
   }
+  return tilesMatrix;
 }
 
 const addCoinToTilesMatrix = () => {
@@ -386,13 +363,13 @@ const drawPlayer = ({canvas, x, y , radius, color}) => {
   ctx.fill();
 }
 
-const drawEnemies = (gameCanvas) => {
+const drawEnemies = (gameCanvas, enemies) => {
   enemies.forEach(enemy => {
     drawPlayer({canvas: gameCanvas, ...enemy})
   })
 }
 
-const drawBullets = (gameCanvas) => {
+const drawBullets = (gameCanvas, bullets) => {
   bullets.forEach(bullet => {
     drawPlayer({canvas: gameCanvas, ...bullet})
   })
