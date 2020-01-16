@@ -10,6 +10,7 @@ const GRAVITY = 0.6;
 const LEFT = 65;
 const RIGHT = 68;
 const UP = 87;
+const DOWN = 83;
 const JUMP = 16;
 const FIRE = 191;
 
@@ -261,11 +262,13 @@ class Game {
       } 
     });
   
-    document.body.onkeydown = evt =>{
+    document.body.onkeydown = evt => {
       if (evt.keyCode == JUMP && player.onGround) {
         player.yDelta = -10;
       } else if (evt.keyCode == UP) {
         player.yDirection = -1;
+      } else if (evt.keyCode == DOWN) {
+        player.yDirection = 1;
       } else if (evt.keyCode == LEFT) {
         player.keyHoldLeft = true;
         player.xDirection = -1;
@@ -280,7 +283,7 @@ class Game {
         player.keyHoldLeft = false;
       } else if (evt.keyCode == RIGHT) {
         player.keyHoldRight = false;
-      } else if (evt.keyCode == UP) {
+      } else if (evt.keyCode == UP || evt.keyCode == DOWN) {
         player.yDirection = 0;
       } else if (evt.keyCode == FIRE) {
         player.fire(this.bullets);
