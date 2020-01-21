@@ -8,6 +8,15 @@ const drawRect = ({canvas, x, y , width, height, color}) => {
   ctx.fillRect(x, y, width, height);
 }
 
+const drawCircle = ({canvas, x, y , radius, color}) => {
+  let ctx = canvas.getContext("2d");
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.arc(x, y , radius, 0, 2 * Math.PI);
+  ctx.closePath();
+  ctx.fill();
+}
+
 const drawTiles = (gameCanvas, tilesMatrix) => {
   tilesMatrix.forEach((row, rowIdx) => {
     row.forEach((_, columnIdx) => {
@@ -15,10 +24,10 @@ const drawTiles = (gameCanvas, tilesMatrix) => {
       let currentTileX = columnIdx * TILE_WIDTH;
       let currentTileY = rowIdx * TILE_HEIGHT
       if (currentTile === BRICK) {
-        drawRect({canvas: gameCanvas, x:currentTileX, y:currentTileY, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: 'blue'})
+        drawRect({canvas: gameCanvas, x:currentTileX, y:currentTileY, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: TILE_COLOR})
       }
       if (currentTile === COIN) {
-        drawRect({canvas: gameCanvas, x:currentTileX, y:currentTileY, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: 'gold'})
+        drawRect({canvas: gameCanvas, x:currentTileX, y:currentTileY, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: COIN_COLOR})
       }
     });
   });
@@ -55,25 +64,4 @@ const generateTilesMatrix = () => {
 
 const addCoinToTilesMatrix = () => {
   tilesMatrix[getRandomInt(NUMBER_OF_ROWS - 1)][getRandomInt(NUMBER_OF_COLUMNS - 1)] = COIN
-}
-
-const drawPlayer = ({canvas, x, y , radius, color}) => {
-  let ctx = canvas.getContext("2d");
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.arc(x, y , radius, 0, 2 * Math.PI);
-  ctx.closePath();
-  ctx.fill();
-}
-
-const drawEnemies = (gameCanvas, enemies) => {
-  enemies.forEach(enemy => {
-    drawPlayer({canvas: gameCanvas, ...enemy})
-  });
-}
-
-const drawBullets = (gameCanvas, bullets) => {
-  bullets.forEach(bullet => {
-    drawPlayer({canvas: gameCanvas, ...bullet})
-  });
 }

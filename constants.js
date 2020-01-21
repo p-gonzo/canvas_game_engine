@@ -19,4 +19,13 @@ const BRICK = 1;
 const COIN = 2;
 
 const PLAYER_SPEED = 3;
-const ENEMY_SPEED = 0.5;
+const ENEMY_SPEED = 0.8;
+
+const BACKGROUND_COLOR = 'skyblue';
+const PLAYER_COLOR = 'white';
+const BULLET_COLOR = 'darkslategray';
+const BASIC_ENEMY_COLOR = 'magenta';
+const WOBBLY_ENEMY_COLOR = 'blue';
+const ZIG_ZAG_ENEMY_COLOR = 'red'
+const COIN_COLOR = 'yellow';
+const TILE_COLOR = 'darkgreen';

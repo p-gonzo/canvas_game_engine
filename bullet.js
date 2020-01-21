@@ -4,9 +4,9 @@ class Bullet {
     this.y = y;
     this.dx = dx;
     this.dy = dy;
-    this.color = 'white';
-    this.radius = 5;
-    this.speed = 10;
+    this.color = BULLET_COLOR;
+    this.radius = 3;
+    this.speed = 15;
     this.deleteFlag = false;
   }
 
@@ -21,5 +21,9 @@ class Bullet {
 
   collidedWithEnemy(enemy) {
     return this.x > enemy.x - enemy.radius && this.x < enemy.x + enemy.radius && this.y > enemy.y - enemy.radius && this.y < enemy.y + enemy.radius;
+  }
+
+  draw(canvas) {
+    drawCircle({ canvas, ...this });
   }
 }
