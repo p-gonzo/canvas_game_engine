@@ -1,4 +1,24 @@
-class Player{
+import {
+  PLAYER_COLOR,
+  PLAYER_SPEED,
+  BRICK,
+  EMPTY,
+  GRAVITY,
+  COIN,
+  CANVAS_HEIGHT,
+  LEFT,
+  RIGHT,
+  UP,
+  DOWN,
+  FIRE,
+  JUMP,
+  TILE_HEIGHT
+} from './constants';
+
+import Bullet from './bullet'
+import { drawCircle, getMousePos, getTileFromPos } from './lib'
+
+export default class Player {
   constructor(xPos, yPos) {
     this.x = xPos;
     this.y = yPos;

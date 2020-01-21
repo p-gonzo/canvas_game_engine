@@ -2,7 +2,7 @@
   "name": "canvas-game-engine",
   "version": "1.0.0",
   "description": "A 2d tile based game engine written in HTML5 Canvas and Vanilla JS",
-  "main": "main.js",
+  "private": true,
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

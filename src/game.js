@@ -1,4 +1,17 @@
-class Game {
+import {
+  FRAMES_PER_SECOND,
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
+  BACKGROUND_COLOR,
+  NUMBER_OF_COLUMNS,
+  NUMBER_OF_ROWS,
+  COIN
+} from './constants';
+import { drawRect, drawTiles, getRandomInt, generateTilesMatrix } from './lib';
+import { Enemy, WobblyEnemy, ZigZagEnemy } from './enemy';
+import Player from './player';
+
+export default class Game {
   constructor(canvasId, canvasWidth, canvasHeight) {
     this.enemies = [];
     this.tilesMatrix = generateTilesMatrix();

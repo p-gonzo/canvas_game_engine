@@ -1,4 +1,7 @@
-class Bullet {
+import { CANVAS_HEIGHT, CANVAS_WIDTH, BULLET_COLOR } from './constants';
+import { drawCircle } from './lib';
+
+export default class Bullet {
   constructor(x, y, dx, dy) {
     this.x = x;
     this.y = y;

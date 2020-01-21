@@ -1,3 +1,15 @@
+import {
+  NUMBER_OF_COLUMNS,
+  NUMBER_OF_ROWS,
+  TILE_HEIGHT,
+  TILE_WIDTH,
+  EMPTY,
+  BRICK,
+  TILE_COLOR,
+  COIN_COLOR,
+  COIN
+} from './constants';
+
 const getRandomInt = max => {
   return Math.floor(Math.random() * Math.floor(max));
 }
@@ -62,6 +74,13 @@ const generateTilesMatrix = () => {
   return tilesMatrix;
 }
 
-const addCoinToTilesMatrix = () => {
-  tilesMatrix[getRandomInt(NUMBER_OF_ROWS - 1)][getRandomInt(NUMBER_OF_COLUMNS - 1)] = COIN
+
+export {
+  getRandomInt,
+  drawRect,
+  drawCircle,
+  drawTiles,
+  getMousePos,
+  getTileFromPos,
+  generateTilesMatrix,
 }

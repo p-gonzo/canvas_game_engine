@@ -1,3 +1,6 @@
+import { BASIC_ENEMY_COLOR, WOBBLY_ENEMY_COLOR, ZIG_ZAG_ENEMY_COLOR } from './constants';
+import { drawCircle } from './lib'
+
 class Enemy {
   constructor(x, y) {
     this.x = x;
@@ -77,3 +80,5 @@ class ZigZagEnemy extends Enemy {
   }
 
 }
+
+export { Enemy, WobblyEnemy, ZigZagEnemy };
