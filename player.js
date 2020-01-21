@@ -5,7 +5,7 @@ class Player{
     this.yDelta = 0;
     this.xDelta = 0;
     this.radius = 15;
-    this.color = 'white';
+    this.color = PLAYER_COLOR;
     this.onGround = false;
     this.keyHoldRight = false;
     this.keyHoldLeft = false;
@@ -14,10 +14,11 @@ class Player{
     this.isDrawing = false;
     this.currentTileType = BRICK;
     this.justToggledTile = { tileCol: -1, tileRow: -1 };
+    this.bullets = [];
   }
-  fire(bullets) {
+  fire() {
     let xDirection = this.yDirection === 0 ? this.xDirection : 0;
-    bullets.push(new Bullet(this.x, this.y, xDirection, this.yDirection));
+    this.bullets.push(new Bullet(this.x, this.y, xDirection, this.yDirection));
   }
   die() {
     this.yDelta = 0;
@@ -100,5 +101,83 @@ class Player{
     this._detectSurroundings(tilesMatrix);
     this._detectCollisions(tilesMatrix);
     this._movePlayerLeftRight();
+  }
+
+  draw(canvas) {
+    drawCircle({ canvas, ...this });
+    this._drawPlayerEyes(canvas);
+  }
+
+  _drawPlayerEyes(canvas) {
+    let playerEye1 = { radius: this.radius / 5, color: 'black' };
+    let playerEye2;
+    
+    if (this.yDirection === 0 ) { // left or right
+      playerEye1.y = this.y - this.radius / 2;
+      if (this.xDirection === -1 ) { // left
+        playerEye1.x = this.x - this.radius / 2;
+      } else { // right
+        playerEye1.x = this.x + this.radius / 2;
+      }
+      playerEye2 = {...playerEye1, x: playerEye1.x + playerEye1.radius * 2 * this.xDirection}
+    } else if (this.yDirection === -1) { // up
+      playerEye1.y = this.y - this.radius;
+      playerEye1.x = this.x - this.radius / 4;
+      playerEye2 = { ...playerEye1, x: this.x + this.radius / 3} ;
+    } else { // down
+      playerEye1.y = this.y - this.radius / 4;
+      playerEye1.x = this.x - this.radius / 4;
+      playerEye2 = { ...playerEye1, x: this.x + this.radius / 3} ;
+    }
+    drawCircle({ canvas, ...playerEye1 })
+    drawCircle({ canvas, ...playerEye2 })
+  }
+
+  addEventListeners(gameCanvas, tilesMatrix) {
+    gameCanvas.addEventListener('mousedown', _ => {
+      this.isDrawing = true;
+    });
+
+    gameCanvas.addEventListener('mouseup', evt => {
+      this.isDrawing = false;
+      const mousePos = getMousePos(gameCanvas, evt);
+      this.toggleBrick(tilesMatrix, getTileFromPos(mousePos))
+      this.justToggledTile = { tileCol: -1, tileRow: -1 };
+    });
+
+    gameCanvas.addEventListener('mousemove', evt => {
+      if (this.isDrawing) {
+        const mousePos = getMousePos(gameCanvas, evt);
+        this.toggleBrick(tilesMatrix, getTileFromPos(mousePos))
+      } 
+    });
+  
+    document.body.onkeydown = evt => {
+      if (evt.keyCode == JUMP && this.onGround) {
+        this.yDelta = -10;
+      } else if (evt.keyCode == UP) {
+        this.yDirection = -1;
+      } else if (evt.keyCode == DOWN) {
+        this.yDirection = 1;
+      } else if (evt.keyCode == LEFT) {
+        this.keyHoldLeft = true;
+        this.xDirection = -1;
+      } else if (evt.keyCode == RIGHT) {
+        this.keyHoldRight = true;
+        this.xDirection = 1;
+      } else if (evt.keyCode == FIRE) {
+        this.fire();
+      }
+    }
+  
+    document.body.onkeyup = (evt) => {
+      if (evt.keyCode == LEFT) {
+        this.keyHoldLeft = false;
+      } else if (evt.keyCode == RIGHT) {
+        this.keyHoldRight = false;
+      } else if (evt.keyCode == UP || evt.keyCode == DOWN) {
+        this.yDirection = 0;
+      }
+    }
   }
 }
