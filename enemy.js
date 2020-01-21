@@ -2,8 +2,9 @@ class Enemy {
   constructor(x, y) {
     this.x = x;
     this.y = y;
-    this.color = 'red';
+    this.color = BASIC_ENEMY_COLOR;
     this.radius = 15;
+    this.speedRatio = 1.3;
     this.deleteFlag = false;
   }
 
@@ -11,13 +12,11 @@ class Enemy {
     this.enemyPlayerXDelta = player.x - this.x;
     this.enemyPlayerYDelta = player.y - this.y;
     
-    const enemyXDelta = this.enemyPlayerXDelta == 0 ? 0 : this.enemyPlayerXDelta > 0 ? ENEMY_SPEED : ENEMY_SPEED * -1;
-    const enemyYDelta = this.enemyPlayerYDelta == 0 ? 0 : this.enemyPlayerYDelta > 0 ? ENEMY_SPEED : ENEMY_SPEED * -1;
+    const enemyXDelta = this.enemyPlayerXDelta == 0 ? 0 : this.enemyPlayerXDelta > 0 ? this.speedRatio : this.speedRatio * -1;
+    const enemyYDelta = this.enemyPlayerYDelta == 0 ? 0 : this.enemyPlayerYDelta > 0 ? this.speedRatio : this.speedRatio * -1;
 
     this.x += enemyXDelta;
     this.y += enemyYDelta;
-
-    this.circularMovementAngle += this.circularMovementSpeed;
   }
 
   tryToKillPlayer(player) {
@@ -25,14 +24,20 @@ class Enemy {
       player.die();
     }
   }
+
+  draw(canvas) {
+    drawCircle({ canvas, ...this });
+  }
 }
 
 class WobblyEnemy extends Enemy {
 
   constructor(x, y) {
     super(x, y);
-    this.circularMovementRadius = 1;
-    this.circularMovementSpeed = 5;
+    this.color = WOBBLY_ENEMY_COLOR;
+    this.speedRatio = 0.8;
+    this.circularMovementRadius = 5;
+    this.circularMovementSpeed = 10;
     this.circularMovementAngle = 0;
   }
 
@@ -46,6 +51,29 @@ class WobblyEnemy extends Enemy {
     this.circularMovementAngle += this.circularMovementSpeed;
     this.x += circleX;
     this.y += circleY;
+  }
+
+}
+
+class ZigZagEnemy extends Enemy {
+
+  constructor(x, y) {
+    super(x, y);
+    this.color = ZIG_ZAG_ENEMY_COLOR;
+    this.speedRatio = 1.3;
+    this.circularMovementRadius = 8;
+    this.circularMovementSpeed = 15;
+    this.circularMovementAngle = 0;
+  }
+
+  updatePosition(player) {
+
+    super.updatePosition(player);
+    
+    let circleX  = this.circularMovementRadius * Math.cos(this.circularMovementAngle * (Math.PI/180));
+
+    this.circularMovementAngle += this.circularMovementSpeed;
+    this.x += circleX;
   }
 
 }
