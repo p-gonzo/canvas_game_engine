@@ -80,6 +80,6 @@ export default class Game {
   }
 
   _addCoinToTilesMatrix() {
-    this.tilesMatrix[getRandomInt(NUMBER_OF_ROWS - 1)][getRandomInt(NUMBER_OF_COLUMNS - 1)] = 'COIN'
+    this.tilesMatrix[getRandomInt(NUMBER_OF_ROWS - 1)][getRandomInt(NUMBER_OF_COLUMNS - 1)] = COIN
   }
 }
