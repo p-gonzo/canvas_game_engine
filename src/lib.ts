@@ -10,17 +10,30 @@ import {
   COIN
 } from './constants';
 
-const getRandomInt = max => {
+const getRandomInt = (max: number) => {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-const drawRect = ({canvas, x, y , width, height, color}) => {
+const drawRect = ({canvas, x, y , width, height, color} : {
+  canvas: HTMLCanvasElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: string
+}) => {
   let ctx = canvas.getContext("2d");
   ctx.fillStyle = color
   ctx.fillRect(x, y, width, height);
 }
 
-const drawCircle = ({canvas, x, y , radius, color}) => {
+const drawCircle = ({canvas, x, y , radius, color} : {
+  canvas: HTMLCanvasElement,
+  x: number,
+  y: number,
+  radius: number,
+  color: string
+}) => {
   let ctx = canvas.getContext("2d");
   ctx.fillStyle = color;
   ctx.beginPath();
@@ -29,9 +42,9 @@ const drawCircle = ({canvas, x, y , radius, color}) => {
   ctx.fill();
 }
 
-const drawTiles = (gameCanvas, tilesMatrix) => {
-  tilesMatrix.forEach((row, rowIdx) => {
-    row.forEach((_, columnIdx) => {
+const drawTiles = (gameCanvas: HTMLCanvasElement, tilesMatrix: Array<Array<number>>) => {
+  tilesMatrix.forEach((row: Array<number>, rowIdx: number) => {
+    row.forEach((_: number, columnIdx: number) => {
       let currentTile = tilesMatrix[rowIdx][columnIdx]
       let currentTileX = columnIdx * TILE_WIDTH;
       let currentTileY = rowIdx * TILE_HEIGHT
@@ -45,7 +58,7 @@ const drawTiles = (gameCanvas, tilesMatrix) => {
   });
 }
 
-const getMousePos = (canvas, evt) => {
+const getMousePos = (canvas: HTMLCanvasElement, evt: MouseEvent) => {
   let rect = canvas.getBoundingClientRect();
   return {
     x: evt.clientX - rect.left,
@@ -53,13 +66,13 @@ const getMousePos = (canvas, evt) => {
   };
 }
 
-const getTileFromPos = ({ x, y }) => {
+const getTileFromPos = ({ x, y }: {x: number, y: number}) => {
   const tileCol = Math.floor(x / TILE_WIDTH);
   const tileRow = Math.floor(y / TILE_HEIGHT);
   return { tileCol, tileRow }
 }
 
-const generateTilesMatrix = () => {
+const generateTilesMatrix = (): Array<Array<number>> => {
   const tilesMatrix = [];
   for (let i = 0; i < NUMBER_OF_ROWS; i ++) {
     tilesMatrix.push([])

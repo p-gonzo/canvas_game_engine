@@ -4,7 +4,8 @@
   "description": "A 2d tile based game engine written in HTML5 Canvas and Vanilla JS",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "webpack",
+    "develop": "webpack --watch"
   },
   "repository": {
     "type": "git",
