@@ -35,7 +35,7 @@ export default class Game {
 
   _init() {
     this.player.addEventListeners(this.gameCanvas, this.tilesMatrix)
-    this._addCoinToTilesMatrix(this.tilesMatrix);
+    this._addCoinToTilesMatrix();
   }
 
   _mainLoop() {
@@ -49,7 +49,7 @@ export default class Game {
   
     this.player.updatePosition(this.tilesMatrix);
     if(this.player.touchingACoin !== -1) {
-      this._addCoinToTilesMatrix(this.tilesMatrix);
+      this._addCoinToTilesMatrix();
     }
   
     this.enemies.forEach(enemy => {
@@ -79,7 +79,7 @@ export default class Game {
     this.player.bullets.forEach(bullet => bullet.draw(this.gameCanvas));
   }
 
-  _addCoinToTilesMatrix(tilesMatrix) {
-    tilesMatrix[getRandomInt(NUMBER_OF_ROWS - 1)][getRandomInt(NUMBER_OF_COLUMNS - 1)] = COIN
+  _addCoinToTilesMatrix() {
+    this.tilesMatrix[getRandomInt(NUMBER_OF_ROWS - 1)][getRandomInt(NUMBER_OF_COLUMNS - 1)] = 'COIN'
   }
 }

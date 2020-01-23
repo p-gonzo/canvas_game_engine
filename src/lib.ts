@@ -10,7 +10,7 @@ import {
   COIN
 } from './constants';
 
-const getRandomInt = (max: number) => {
+const getRandomInt = (max: number): number => {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
