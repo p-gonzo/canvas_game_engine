@@ -36,6 +36,13 @@ export default class Player {
     this.justToggledTile = { tileCol: -1, tileRow: -1 };
     this.bullets = [];
   }
+  // marker(): Omit<DrawCircleArgs, 'canvas'> {
+  //   return {
+  //     center: { x: this.x, y: this.y },
+  //     radius: this.radius,
+  //     color: this.color,
+  //   }
+  // }
   fire() {
     let xDirection = this.yDirection === 0 ? this.xDirection : 0;
     this.bullets.push(new Bullet(this.x, this.y, xDirection, this.yDirection));
@@ -124,7 +131,8 @@ export default class Player {
   }
 
   draw(canvas) {
-    drawCircle({ canvas, ...this });
+    // drawCircle({ canvas, ...this.marker() });
+    drawCircle({ canvas, ...this })
     this._drawPlayerEyes(canvas);
   }
 

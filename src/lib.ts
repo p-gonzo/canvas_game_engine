@@ -14,6 +14,22 @@ const getRandomInt = (max: number): number => {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
+// interface Point {
+//   x: number;
+//   y: number;
+// }
+
+// interface BaseDrawArgs {
+//   canvas: HTMLCanvasElement;
+//   color: string;
+// }
+
+// interface DrawRectArgs extends BaseDrawArgs {
+//   topLeft: Point;
+//   width: number;
+//   height: number;
+// }
+
 const drawRect = ({canvas, x, y , width, height, color} : {
   canvas: HTMLCanvasElement,
   x: number,
@@ -27,13 +43,15 @@ const drawRect = ({canvas, x, y , width, height, color} : {
   ctx.fillRect(x, y, width, height);
 }
 
-const drawCircle = ({canvas, x, y , radius, color} : {
-  canvas: HTMLCanvasElement,
-  x: number,
-  y: number,
-  radius: number,
-  color: string
-}) => {
+interface DrawCircleArgs {
+  canvas: HTMLCanvasElement;
+  x: number;
+  y: number;
+  radius: number;
+  color: string;
+}
+
+const drawCircle = ({canvas, x, y , radius, color} : DrawCircleArgs) => {
   let ctx = canvas.getContext("2d");
   ctx.fillStyle = color;
   ctx.beginPath();
@@ -42,7 +60,7 @@ const drawCircle = ({canvas, x, y , radius, color} : {
   ctx.fill();
 }
 
-const drawTiles = (gameCanvas: HTMLCanvasElement, tilesMatrix: Array<Array<number>>) => {
+const drawTiles = (gameCanvas: HTMLCanvasElement, tilesMatrix: number[][]) => {
   tilesMatrix.forEach((row: Array<number>, rowIdx: number) => {
     row.forEach((_: number, columnIdx: number) => {
       let currentTile = tilesMatrix[rowIdx][columnIdx]
