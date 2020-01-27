@@ -72,7 +72,7 @@ export default class Game {
   }
 
   _drawAll() {
-    drawRect({ canvas: this.gameCanvas, x: 0, y: 0, height: CANVAS_HEIGHT, width: CANVAS_WIDTH, color: BACKGROUND_COLOR });
+    drawRect({ canvas: this.gameCanvas, topLeft: { x: 0, y: 0 }, height: CANVAS_HEIGHT, width: CANVAS_WIDTH, color: BACKGROUND_COLOR });
     drawTiles(this.gameCanvas, this.tilesMatrix);
     this.player.draw(this.gameCanvas);
     this.enemies.forEach(enemy => enemy.draw(this.gameCanvas));

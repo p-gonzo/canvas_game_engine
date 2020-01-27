@@ -10,52 +10,42 @@ import {
   COIN
 } from './constants';
 
+interface Point {
+  x: number;
+  y: number;
+}
+
+interface BaseDrawArgs {
+  canvas: HTMLCanvasElement;
+  color: string;
+}
+
+interface DrawRectArgs extends BaseDrawArgs {
+  topLeft: Point;
+  width: number;
+  height: number;
+}
+
+interface DrawCircleArgs extends BaseDrawArgs {
+  radius: number;
+  center: Point;
+}
+
 const getRandomInt = (max: number): number => {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-// interface Point {
-//   x: number;
-//   y: number;
-// }
-
-// interface BaseDrawArgs {
-//   canvas: HTMLCanvasElement;
-//   color: string;
-// }
-
-// interface DrawRectArgs extends BaseDrawArgs {
-//   topLeft: Point;
-//   width: number;
-//   height: number;
-// }
-
-const drawRect = ({canvas, x, y , width, height, color} : {
-  canvas: HTMLCanvasElement,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  color: string
-}) => {
+const drawRect = ({canvas, topLeft , width, height, color} : DrawRectArgs ) => {
   let ctx = canvas.getContext("2d");
   ctx.fillStyle = color
-  ctx.fillRect(x, y, width, height);
+  ctx.fillRect(topLeft.x, topLeft.y, width, height);
 }
 
-interface DrawCircleArgs {
-  canvas: HTMLCanvasElement;
-  x: number;
-  y: number;
-  radius: number;
-  color: string;
-}
-
-const drawCircle = ({canvas, x, y , radius, color} : DrawCircleArgs) => {
+const drawCircle = ({canvas, center, radius, color} : DrawCircleArgs) => {
   let ctx = canvas.getContext("2d");
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.arc(x, y , radius, 0, 2 * Math.PI);
+  ctx.arc(center.x, center.y, radius, 0, 2 * Math.PI);
   ctx.closePath();
   ctx.fill();
 }
@@ -67,10 +57,10 @@ const drawTiles = (gameCanvas: HTMLCanvasElement, tilesMatrix: number[][]) => {
       let currentTileX = columnIdx * TILE_WIDTH;
       let currentTileY = rowIdx * TILE_HEIGHT
       if (currentTile === BRICK) {
-        drawRect({canvas: gameCanvas, x:currentTileX, y:currentTileY, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: TILE_COLOR})
+        drawRect({canvas: gameCanvas, topLeft: { x:currentTileX, y:currentTileY }, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: TILE_COLOR})
       }
       if (currentTile === COIN) {
-        drawRect({canvas: gameCanvas, x:currentTileX, y:currentTileY, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: COIN_COLOR})
+        drawRect({canvas: gameCanvas, topLeft: { x:currentTileX, y:currentTileY }, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: COIN_COLOR})
       }
     });
   });
