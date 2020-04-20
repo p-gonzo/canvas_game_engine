@@ -1,8 +1,18 @@
 import { BASIC_ENEMY_COLOR, WOBBLY_ENEMY_COLOR, ZIG_ZAG_ENEMY_COLOR } from './constants';
 import { drawCircle } from './lib'
+import Player from './player';
 
 class Enemy {
-  constructor(x, y) {
+  x: number;
+  y: number;
+  color: string;
+  radius: number;
+  speedRatio: number;
+  deleteFlag: boolean;
+  enemyPlayerXDelta: number;
+  enemyPlayerYDelta: number;
+
+  constructor(x: number, y: number) {
     this.x = x;
     this.y = y;
     this.color = BASIC_ENEMY_COLOR;
@@ -11,7 +21,7 @@ class Enemy {
     this.deleteFlag = false;
   }
 
-  updatePosition(player) {
+  updatePosition(player: Player) {
     this.enemyPlayerXDelta = player.x - this.x;
     this.enemyPlayerYDelta = player.y - this.y;
     
@@ -22,20 +32,24 @@ class Enemy {
     this.y += enemyYDelta;
   }
 
-  tryToKillPlayer(player) {
+  tryToKillPlayer(player: Player) {
     if (Math.abs(this.enemyPlayerXDelta) < player.radius + this.radius && Math.abs(this.enemyPlayerYDelta) < player.radius + this.radius) {
       player.die();
     }
   }
 
-  draw(canvas) {
-    drawCircle({ canvas, ...this });
+  draw(canvas: HTMLCanvasElement) {
+    drawCircle({ canvas,  center: { x: this.x, y: this.y }, radius: this.radius, color: this.color});
   }
 }
 
 class WobblyEnemy extends Enemy {
 
-  constructor(x, y) {
+  circularMovementRadius: number;
+  circularMovementSpeed: number;
+  circularMovementAngle: number;
+
+  constructor(x: number, y: number) {
     super(x, y);
     this.color = WOBBLY_ENEMY_COLOR;
     this.speedRatio = 0.8;
@@ -44,7 +58,7 @@ class WobblyEnemy extends Enemy {
     this.circularMovementAngle = 0;
   }
 
-  updatePosition(player) {
+  updatePosition(player: Player) {
 
     super.updatePosition(player);
     
@@ -60,7 +74,11 @@ class WobblyEnemy extends Enemy {
 
 class ZigZagEnemy extends Enemy {
 
-  constructor(x, y) {
+  circularMovementRadius: number;
+  circularMovementSpeed: number;
+  circularMovementAngle: number;
+
+  constructor(x: number, y: number) {
     super(x, y);
     this.color = ZIG_ZAG_ENEMY_COLOR;
     this.speedRatio = 1.3;
@@ -69,7 +87,7 @@ class ZigZagEnemy extends Enemy {
     this.circularMovementAngle = 0;
   }
 
-  updatePosition(player) {
+  updatePosition(player: Player) {
 
     super.updatePosition(player);
     

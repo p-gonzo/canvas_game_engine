@@ -12,10 +12,17 @@ import { Enemy, WobblyEnemy, ZigZagEnemy } from './enemy';
 import Player from './player';
 
 export default class Game {
-  constructor(canvasId, canvasWidth, canvasHeight) {
+  enemies: Enemy[];
+  tilesMatrix: number[][];
+  gameCanvas: HTMLCanvasElement;
+  player: Player
+  enemyTypes: (typeof Enemy | typeof ZigZagEnemy | typeof WobblyEnemy )[];
+  newEnemyTypeIndex: number;
+
+  constructor(canvasId: string, canvasWidth: number, canvasHeight: number) {
     this.enemies = [];
     this.tilesMatrix = generateTilesMatrix();
-    this.gameCanvas = document.getElementById(canvasId);
+    this.gameCanvas = document.getElementById(canvasId) as HTMLCanvasElement;
     this.gameCanvas.width = canvasWidth;
     this.gameCanvas.height = canvasHeight;
     this.player = new Player(100, 100);
@@ -40,7 +47,7 @@ export default class Game {
 
   _mainLoop() {
     this._moveAll();
-    this._drawAll(this.gameCanvas, this.tilesMatrix);
+    this._drawAll();
   }
 
   _moveAll() {

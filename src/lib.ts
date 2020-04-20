@@ -104,4 +104,5 @@ export {
   getMousePos,
   getTileFromPos,
   generateTilesMatrix,
+  DrawCircleArgs
 }

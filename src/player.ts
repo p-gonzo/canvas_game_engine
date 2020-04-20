@@ -16,10 +16,42 @@ import {
 } from './constants';
 
 import Bullet from './bullet'
-import { drawCircle, getMousePos, getTileFromPos } from './lib'
+import { drawCircle, getMousePos, getTileFromPos, DrawCircleArgs } from './lib'
+
+interface tilePosition {
+  tileCol: number;
+  tileRow: number;
+}
 
 export default class Player {
-  constructor(xPos, yPos) {
+  x: number;
+  y: number;
+  yDelta: number;
+  xDelta: number;
+  radius: number;
+  color: string;
+  onGround: boolean;
+  keyHoldRight: boolean;
+  keyHoldLeft: boolean;
+  xDirection: number;
+  yDirection: number;
+  isDrawing: boolean;
+  currentTileType: number;
+  justToggledTile: tilePosition;
+  bullets: Bullet[];
+  playerFeet: tilePosition;
+  playerRightSide: tilePosition;
+  playerLeftSide: tilePosition;
+  playerHead: tilePosition;
+  playerFeetTile: number;
+  playerRightSideTile: number;
+  playerLeftSideTile: number;
+  playerHeadTile: number;
+  tileValuesAroundPlayer: number[];
+  tilesAroundPlayer: tilePosition[];
+  touchingACoin: number;
+
+  constructor(xPos: number, yPos: number) {
     this.x = xPos;
     this.y = yPos;
     this.yDelta = 0;
@@ -36,12 +68,8 @@ export default class Player {
     this.justToggledTile = { tileCol: -1, tileRow: -1 };
     this.bullets = [];
   }
-  marker(): Omit<DrawCircleArgs, 'canvas'> {
-    return {
-      center: { x: this.x, y: this.y },
-      radius: this.radius,
-      color: this.color,
-    }
+  _makeDrawCircleArgs(): Omit<DrawCircleArgs, 'canvas'> {
+    return { center: { x: this.x, y: this.y }, radius: this.radius, color: this.color };
   }
   fire() {
     let xDirection = this.yDirection === 0 ? this.xDirection : 0;
@@ -54,7 +82,7 @@ export default class Player {
     this.y = 100;
     this.onGround = false;
   }
-  toggleBrick( tilesMatrix, { tileCol, tileRow } ){
+  toggleBrick( tilesMatrix: number[][], { tileCol, tileRow }: {tileCol: number, tileRow: number} ){
     if (tileCol !== this.justToggledTile.tileCol || tileRow !== this.justToggledTile.tileRow)  {
       tilesMatrix[tileRow][tileCol] === EMPTY ? tilesMatrix[tileRow][tileCol] = this.currentTileType : tilesMatrix[tileRow][tileCol] = 0;
       this.justToggledTile = { tileCol, tileRow };
@@ -66,7 +94,7 @@ export default class Player {
     }
     this.y += this.yDelta;
   }
-  _detectSurroundings(tilesMatrix) {
+  _detectSurroundings(tilesMatrix: number[][]) {
     this.playerFeet = getTileFromPos({x: this.x, y: this.y + this.radius});
     this.playerRightSide = getTileFromPos({x: this.x + this.radius, y: this.y});
     this.playerLeftSide = getTileFromPos({x: this.x - this.radius, y: this.y});
@@ -82,7 +110,7 @@ export default class Player {
     this.touchingACoin = this.tileValuesAroundPlayer.indexOf(COIN);
   }
 
-  _detectCollisions(tilesMatrix) {
+  _detectCollisions(tilesMatrix: number[][]) {
     if (this.touchingACoin !== -1) {
       const targetTile = this.tilesAroundPlayer[this.touchingACoin]
       tilesMatrix[targetTile.tileRow][targetTile.tileCol] = EMPTY;
@@ -123,45 +151,47 @@ export default class Player {
     }
   }
 
-  updatePosition(tilesMatrix) {
+  updatePosition(tilesMatrix: number[][]) {
     this._applyGravity();
     this._detectSurroundings(tilesMatrix);
     this._detectCollisions(tilesMatrix);
     this._movePlayerLeftRight();
   }
 
-  draw(canvas) {
-    // drawCircle({ canvas, ...this.marker() });
-    drawCircle({ canvas, ...this })
+  draw(canvas: HTMLCanvasElement) {
+    drawCircle({ canvas, ...this._makeDrawCircleArgs() });
     this._drawPlayerEyes(canvas);
   }
 
-  _drawPlayerEyes(canvas) {
-    let playerEye1 = { radius: this.radius / 5, color: 'black' };
-    let playerEye2;
+  _drawPlayerEyes(canvas: HTMLCanvasElement) {
+    let playerEye1: Omit<DrawCircleArgs, 'canvas'> = { radius: this.radius / 5, color: 'black', center: {x: 0, y: 0} };
+    let playerEye2: Omit<DrawCircleArgs, 'canvas'>;
     
     if (this.yDirection === 0 ) { // left or right
-      playerEye1.y = this.y - this.radius / 2;
+      playerEye1.center.y = this.y - this.radius / 2;
       if (this.xDirection === -1 ) { // left
-        playerEye1.x = this.x - this.radius / 2;
+        playerEye1.center.x = this.x - this.radius / 2;
       } else { // right
-        playerEye1.x = this.x + this.radius / 2;
+        playerEye1.center.x = this.x + this.radius / 2;
       }
-      playerEye2 = {...playerEye1, x: playerEye1.x + playerEye1.radius * 2 * this.xDirection}
+      playerEye2 = {...playerEye1, center: { ...playerEye1.center } };
+      playerEye2.center.x = playerEye1.center.x + playerEye1.radius * 2 * this.xDirection;
     } else if (this.yDirection === -1) { // up
-      playerEye1.y = this.y - this.radius;
-      playerEye1.x = this.x - this.radius / 4;
-      playerEye2 = { ...playerEye1, x: this.x + this.radius / 3} ;
+      playerEye1.center.y = this.y - this.radius;
+      playerEye1.center.x = this.x - this.radius / 4;
+      playerEye2 = {...playerEye1, center: { ...playerEye1.center } };
+      playerEye2.center.x = this.x + this.radius / 3;
     } else { // down
-      playerEye1.y = this.y - this.radius / 4;
-      playerEye1.x = this.x - this.radius / 4;
-      playerEye2 = { ...playerEye1, x: this.x + this.radius / 3} ;
+      playerEye1.center.y = this.y - this.radius / 4;
+      playerEye1.center.x = this.x - this.radius / 4;
+      playerEye2 = {...playerEye1, center: { ...playerEye1.center } };
+      playerEye2.center.x = this.x + this.radius / 3;
     }
     drawCircle({ canvas, ...playerEye1 })
     drawCircle({ canvas, ...playerEye2 })
   }
 
-  addEventListeners(gameCanvas, tilesMatrix) {
+  addEventListeners(gameCanvas: HTMLCanvasElement, tilesMatrix: number[][]) {
     gameCanvas.addEventListener('mousedown', _ => {
       this.isDrawing = true;
     });
