@@ -7,12 +7,12 @@ export const TILE_HEIGHT: number = CANVAS_HEIGHT / NUMBER_OF_ROWS;
 export const FRAMES_PER_SECOND: number = 60;
 export const GRAVITY: number = 0.6;
 
-export const LEFT: number = 65;
-export const RIGHT: number = 68;
-export const UP: number = 87;
-export const DOWN: number = 83;
-export const JUMP: number = 16;
-export const FIRE: number = 191;
+export const LEFT: number = 65; // A
+export const RIGHT: number = 68; // D
+export const UP: number = 87; // W
+export const DOWN: number = 83; // S
+export const JUMP: number = 16;  // ?
+export const FIRE: number = 191; // R-SHIFT
 
 export const EMPTY: number = 0;
 export const BRICK: number = 1;

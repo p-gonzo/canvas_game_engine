@@ -5,11 +5,59 @@ import {
   BACKGROUND_COLOR,
   NUMBER_OF_COLUMNS,
   NUMBER_OF_ROWS,
-  COIN
+  COIN,
+  BRICK,
+  EMPTY,
+  TILE_HEIGHT,
+  TILE_WIDTH,
+  COIN_COLOR,
+  TILE_COLOR
 } from './constants';
-import { drawRect, drawTiles, getRandomInt, generateTilesMatrix } from './lib';
 import { Enemy, WobblyEnemy, ZigZagEnemy } from './enemy';
+import { DrawRectArgs } from './interfaces';
 import Player from './player';
+
+const generateTilesMatrix = (): number[][] => {
+  const tilesMatrix = [];
+  for (let i = 0; i < NUMBER_OF_ROWS; i ++) {
+    tilesMatrix.push([])
+    for (let j = 0; j < NUMBER_OF_COLUMNS; j ++) {
+      if (i === NUMBER_OF_ROWS - 1) {
+        tilesMatrix[i].push(BRICK)
+      } else {
+        tilesMatrix[i].push(EMPTY)
+      }
+    }
+  }
+  return tilesMatrix;
+}
+
+const drawRect = ({canvas, topLeft , width, height, color} : DrawRectArgs ) => {
+  let ctx = canvas.getContext("2d");
+  ctx.fillStyle = color
+  ctx.fillRect(topLeft.x, topLeft.y, width, height);
+}
+
+const getRandomInt = (max: number): number => {
+  return Math.floor(Math.random() * Math.floor(max));
+}
+
+const drawTiles = (gameCanvas: HTMLCanvasElement, tilesMatrix: number[][]) => {
+  tilesMatrix.forEach((row: Array<number>, rowIdx: number) => {
+    row.forEach((_: number, columnIdx: number) => {
+      let currentTile = tilesMatrix[rowIdx][columnIdx]
+      let currentTileX = columnIdx * TILE_WIDTH;
+      let currentTileY = rowIdx * TILE_HEIGHT
+      if (currentTile === BRICK) {
+        drawRect({canvas: gameCanvas, topLeft: { x:currentTileX, y:currentTileY }, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: TILE_COLOR})
+      }
+      if (currentTile === COIN) {
+        drawRect({canvas: gameCanvas, topLeft: { x:currentTileX, y:currentTileY }, height: TILE_HEIGHT - 1, width: TILE_WIDTH - 1, color: COIN_COLOR})
+      }
+    });
+  });
+}
+
 
 export default class Game {
   enemies: Enemy[];

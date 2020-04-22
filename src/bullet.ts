@@ -1,6 +1,7 @@
 import { CANVAS_HEIGHT, CANVAS_WIDTH, BULLET_COLOR } from './constants';
-import { drawCircle, DrawCircleArgs } from './lib';
+import { drawCircle } from './common';
 import { Enemy } from './enemy';
+import { DrawCircleArgs } from './interfaces';
 
 export default class Bullet {
   x: number;
@@ -11,6 +12,7 @@ export default class Bullet {
   radius: number;
   speed: number;
   deleteFlag: boolean;
+  
   constructor(x: number, y: number, dx: number, dy: number) {
     this.x = x;
     this.y = y;
@@ -22,8 +24,8 @@ export default class Bullet {
     this.deleteFlag = false;
   }
 
-  _makeDrawCircleArgs(): Omit<DrawCircleArgs, 'canvas'> {
-    return { center: {x: this.x, y: this.y, }, radius: this.radius, color: this.color}
+  _makeDrawCircleArgs(canvas: HTMLCanvasElement): DrawCircleArgs {
+      return { center: {x: this.x, y: this.y, }, radius: this.radius, color: this.color, canvas: canvas}
   }
 
   updatePosition() {
@@ -40,6 +42,6 @@ export default class Bullet {
   }
 
   draw(canvas: HTMLCanvasElement) {
-    drawCircle({ canvas, ...this._makeDrawCircleArgs() });
+    drawCircle(this._makeDrawCircleArgs(canvas));
   }
 }

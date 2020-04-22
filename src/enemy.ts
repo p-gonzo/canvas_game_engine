@@ -1,5 +1,5 @@
 import { BASIC_ENEMY_COLOR, WOBBLY_ENEMY_COLOR, ZIG_ZAG_ENEMY_COLOR } from './constants';
-import { drawCircle } from './lib'
+import { drawCircle } from './common'
 import Player from './player';
 
 class Enemy {
