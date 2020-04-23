@@ -31,6 +31,11 @@ interface DrawCircleArgs extends Circle {
   canvas: HTMLCanvasElement;
 }
 
+interface CircularSpriteConstructorArgs extends Circle {
+  dx?: number;
+  dy?: number;
+}
+
 export {
   TilePosition,
   Point,
@@ -38,5 +43,6 @@ export {
   Rect,
   Circle,
   DrawRectArgs,
-  DrawCircleArgs
+  DrawCircleArgs, 
+  CircularSpriteConstructorArgs
 }
