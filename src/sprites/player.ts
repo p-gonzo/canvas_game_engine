@@ -14,10 +14,10 @@ import {
   JUMP,
   TILE_HEIGHT,
   TILE_WIDTH
-} from './constants';
-import { drawCircle }  from './common'
-import { TilePosition, DrawCircleArgs, Circle, Point } from './interfaces'
+} from '../constants';
+import { TilePosition, Circle, Point } from '../interfaces'
 import Bullet from './bullet'
+import CircularSprite from './circularSprite';
 
 const getTileFromPos = ({ x, y }: {x: number, y: number}) => {
   const tileCol = Math.floor(x / TILE_WIDTH);
@@ -33,13 +33,7 @@ const getMousePos = (canvas: HTMLCanvasElement, evt: MouseEvent): Point => {
   };
 }
 
-export default class Player {
-  x: number;
-  y: number;
-  yDelta: number;
-  xDelta: number;
-  radius: number;
-  color: string;
+export default class Player extends CircularSprite {
   onGround: boolean;
   keyHoldRight: boolean;
   keyHoldLeft: boolean;
@@ -61,13 +55,8 @@ export default class Player {
   tilesAroundPlayer: TilePosition[];
   touchingACoin: number;
 
-  constructor(xPos: number, yPos: number) {
-    this.x = xPos;
-    this.y = yPos;
-    this.yDelta = 0;
-    this.xDelta = 0;
-    this.radius = 15;
-    this.color = PLAYER_COLOR;
+  constructor(x: number, y: number) {
+    super({center: {x: x, y: y}, dy: 0, dx: 0, color: PLAYER_COLOR, speed: PLAYER_SPEED, radius: 15});
     this.onGround = false;
     this.keyHoldRight = false;
     this.keyHoldLeft = false;
@@ -78,16 +67,13 @@ export default class Player {
     this.justToggledTile = { tileCol: -1, tileRow: -1 };
     this.bullets = [];
   }
-  _makeDrawCircleArgs(canvas: HTMLCanvasElement): DrawCircleArgs {
-      return { center: { x: this.x, y: this.y }, radius: this.radius, color: this.color, canvas: canvas };
-  }
   fire() {
     let xDirection = this.yDirection === 0 ? this.xDirection : 0;
     this.bullets.push(new Bullet(this.x, this.y, xDirection, this.yDirection));
   }
   die() {
-    this.yDelta = 0;
-    this.xDelta = 0;
+    this.dy = 0;
+    this.dx = 0;
     this.x = 100;
     this.y = 100;
     this.onGround = false;
@@ -100,9 +86,9 @@ export default class Player {
   }
   _applyGravity() {
     if (!this.onGround) {
-      this.yDelta += GRAVITY;
+      this.dy += GRAVITY;
     }
-    this.y += this.yDelta;
+    this.y += this.dy;
   }
   _detectSurroundings(tilesMatrix: number[][]) {
     this.playerFeet = getTileFromPos({x: this.x, y: this.y + this.radius});
@@ -124,19 +110,19 @@ export default class Player {
       tilesMatrix[targetTile.tileRow][targetTile.tileCol] = EMPTY;
     }
     
-    if (this.playerFeetTile === BRICK && this.yDelta > 0 && this.y - this.radius < this.playerFeet.tileRow * TILE_HEIGHT) { // Player is falling and lands on tile
+    if (this.playerFeetTile === BRICK && this.dy > 0 && this.y - this.radius < this.playerFeet.tileRow * TILE_HEIGHT) { // Player is falling and lands on tile
       this.onGround = true;
-      this.yDelta = 0;
+      this.dy = 0;
     } else if (this.playerFeetTile === EMPTY) {
       this.onGround = false;
     }
     // If the payer is moving right, and they hit a block, stop them from moving right
     if (this.keyHoldRight && this.playerRightSideTile) {
-      this.x -= 3;
+      this.dx = 0;
     }
-    // If the payer is moving left, and they hit a block, stop them from moving right
+    // If the payer is moving left, and they hit a block, stop them from moving left
     if (this.keyHoldLeft && this.playerLeftSideTile) {
-      this.x += 3;
+      this.dx = 0;
     }
   
     // Reset player if they fall
@@ -150,24 +136,27 @@ export default class Player {
     }
   }
 
-  _movePlayerLeftRight() {
-    if (this.keyHoldLeft) {
-      this.x -= PLAYER_SPEED
-    }
+  _applyLeftRightKeypress() {
+    this.dx = 0;
     if (this.keyHoldRight) {
-      this.x += PLAYER_SPEED
+      this.dx = this.speed;
+    }
+    if (this.keyHoldLeft) {
+      this.dx = this.speed * -1;
     }
   }
 
   updatePosition(tilesMatrix: number[][]) {
     this._applyGravity();
     this._detectSurroundings(tilesMatrix);
+    this._applyLeftRightKeypress();
     this._detectCollisions(tilesMatrix);
-    this._movePlayerLeftRight();
+    
+    this.x += this.dx; // finally update x
   }
 
   draw(canvas: HTMLCanvasElement) {
-    drawCircle(this._makeDrawCircleArgs(canvas));
+    super.draw(canvas);
     this._drawPlayerEyes(canvas);
   }
 
@@ -195,8 +184,8 @@ export default class Player {
       playerEye2 = {...playerEye1, center: { ...playerEye1.center } };
       playerEye2.center.x = this.x + this.radius / 3;
     }
-    drawCircle({ canvas, ...playerEye1 })
-    drawCircle({ canvas, ...playerEye2 })
+    super.draw(canvas, playerEye1);
+    super.draw(canvas, playerEye2);
   }
 
   addEventListeners(gameCanvas: HTMLCanvasElement, tilesMatrix: number[][]) {
@@ -220,7 +209,7 @@ export default class Player {
   
     document.body.onkeydown = (evt:KeyboardEvent) => {
       if (evt.keyCode == JUMP && this.onGround) {
-        this.yDelta = -10;
+        this.dy = -10;
       } else if (evt.keyCode == UP) {
         this.yDirection = -1;
       } else if (evt.keyCode == DOWN) {

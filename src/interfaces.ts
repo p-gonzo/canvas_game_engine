@@ -34,6 +34,7 @@ interface DrawCircleArgs extends Circle {
 interface CircularSpriteConstructorArgs extends Circle {
   dx?: number;
   dy?: number;
+  speed: number;
 }
 
 export {

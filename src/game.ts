@@ -13,9 +13,9 @@ import {
   COIN_COLOR,
   TILE_COLOR
 } from './constants';
-import { Enemy, WobblyEnemy, ZigZagEnemy } from './enemy';
+import { Enemy, CircularEnemy, ZigZagEnemy } from './sprites/enemy';
 import { DrawRectArgs } from './interfaces';
-import Player from './player';
+import Player from './sprites/player';
 
 const generateTilesMatrix = (): number[][] => {
   const tilesMatrix = [];
@@ -64,7 +64,7 @@ export default class Game {
   tilesMatrix: number[][];
   gameCanvas: HTMLCanvasElement;
   player: Player
-  enemyTypes: (typeof Enemy | typeof ZigZagEnemy | typeof WobblyEnemy )[];
+  enemyTypes: (typeof Enemy | typeof ZigZagEnemy | typeof CircularEnemy )[];
   newEnemyTypeIndex: number;
 
   constructor(canvasId: string, canvasWidth: number, canvasHeight: number) {
@@ -74,7 +74,7 @@ export default class Game {
     this.gameCanvas.width = canvasWidth;
     this.gameCanvas.height = canvasHeight;
     this.player = new Player(100, 100);
-    this.enemyTypes = [ Enemy, ZigZagEnemy, WobblyEnemy ];
+    this.enemyTypes = [ Enemy, ZigZagEnemy, CircularEnemy ];
     this.newEnemyTypeIndex = 0;
   }
 
