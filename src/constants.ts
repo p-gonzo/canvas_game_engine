@@ -11,8 +11,8 @@ export const LEFT: number = 65; // A
 export const RIGHT: number = 68; // D
 export const UP: number = 87; // W
 export const DOWN: number = 83; // S
-export const JUMP: number = 16;  // ?
-export const FIRE: number = 191; // R-SHIFT
+export const JUMP: number = 32;  // Mac SPACE
+export const FIRE: number = 16; // Mac R-SHIFT
 
 export const EMPTY: number = 0;
 export const BRICK: number = 1;

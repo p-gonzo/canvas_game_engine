@@ -4,8 +4,8 @@
   "description": "A 2d tile based game engine written in TypeScript",
   "private": true,
   "scripts": {
-    "build": "webpack",
-    "develop": "webpack --watch"
+    "build": "export NODE_OPTIONS=--openssl-legacy-provider; webpack",
+    "develop": " export NODE_OPTIONS=--openssl-legacy-provider; webpack --watch"
   },
   "repository": {
     "type": "git",
