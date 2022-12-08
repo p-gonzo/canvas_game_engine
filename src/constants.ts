@@ -11,13 +11,14 @@ export const LEFT: number = 65; // A
 export const RIGHT: number = 68; // D
 export const UP: number = 87; // W
 export const DOWN: number = 83; // S
-export const JUMP: number = 32;  // Mac SPACE
-export const FIRE: number = 16; // Mac R-SHIFT
+export const JUMP: number = 16;  // R Shift
+export const FIRE: number = 191; // Backslash
 
 export const EMPTY: number = 0;
 export const BRICK: number = 1;
 export const COIN: number = 2;
 
+export const BULLET_SPEED: number = 4;
 export const PLAYER_SPEED: number = 3;
 export const ENEMY_SPEED: number = 0.8;
 
