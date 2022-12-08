@@ -68,8 +68,15 @@ export default class Player extends CircularSprite {
     this.bullets = [];
   }
   fire() {
-    let xDirection = this.yDirection === 0 ? this.xDirection : 0;
-    this.bullets.push(new Bullet(this.x, this.y, xDirection, this.yDirection));
+    // Add a portion of the player's velocity to the bullet
+    let bulletDY = this.yDirection + this.dy/3;
+    let bulletDX = this.xDirection + this.dx/3;
+
+    // Don't move the bullet on the x axis if the player is still
+    // And they are facing up or down
+    if (this.dx === 0 && this.yDirection !== 0) { bulletDX = 0; }
+
+    this.bullets.push(new Bullet(this.x, this.y, bulletDX, bulletDY));
   }
   die() {
     this.dy = 0;
